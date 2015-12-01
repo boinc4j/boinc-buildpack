@@ -62,19 +62,21 @@ EOF
   done
 }
 
-if [ ! -d $BUILD_DIR/.apt ]; then
+if [ "$REINSTALL_DEPS" = "true" ] || [ ! -d $BUILD_DIR/.apt ]; then
   install_deps
+else
+  else "-----> Using cached MySQL Client... "
 fi
 
 install_boinc() {
   #### Download BOINC source
-  echo -n "-----> Downloading BOINC... "
+  echo -n "-----> Downloading BOINC source... "
   BOINC_DIR=${1}
   mkdir -p $BOINC_DIR
   curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C $BOINC_DIR --strip-components=1
 
   #### Build BOINC from source
-  echo -n "-----> Making BOINC... "
+  echo -n "-----> Making BOINC Server... "
   cd $BOINC_DIR
   ./_autosetup
   ./configure --disable-client --disable-manager
@@ -82,12 +84,19 @@ install_boinc() {
   cd -
 }
 
-if [ ! -d $BUILD_DIR/boinc ]; then
+if [ "$REBUILD_BOINC" = "true" ] || [ ! -d $BUILD_DIR/boinc ]; then
   BOINC_DIR=/tmp/boinc-src
   install_boinc $BOINC_DIR
   mkdir -p $BUILD_DIR/boinc
   cp -R $BOINC_DIR/* $BUILD_DIR/boinc
+else
+  else "-----> Using cached BOINC Server... "
 fi
+
+# populate profile.d
+PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
+mkdir -p $(dirname $PROFILE_PATH)
+echo "export PATH=\$HOME/.apt/usr/bin:\$PATH" >> $PROFILE_PATH
 
 # repack cache with new assets
 mkdir -p $CACHE_DIR
