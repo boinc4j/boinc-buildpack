@@ -65,7 +65,7 @@ EOF
 if [ "$REINSTALL_DEPS" = "true" ] || [ ! -d $BUILD_DIR/.apt ]; then
   install_deps
 else
-  else "-----> Using cached MySQL Client... "
+  echo "-----> Using cached MySQL Client... "
 fi
 
 install_boinc() {
@@ -90,7 +90,7 @@ if [ "$REBUILD_BOINC" = "true" ] || [ ! -d $BUILD_DIR/boinc ]; then
   mkdir -p $BUILD_DIR/boinc
   cp -R $BOINC_DIR/* $BUILD_DIR/boinc
 else
-  else "-----> Using cached BOINC Server... "
+  echo "-----> Using cached BOINC Server... "
 fi
 
 # populate profile.d
