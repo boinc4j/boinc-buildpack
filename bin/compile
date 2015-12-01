@@ -85,13 +85,16 @@ install_boinc() {
 }
 
 if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc ]; then
-  BOINC_DIR=/tmp/boinc-src
+  BOINC_DIR=$BUILD_DIR/boinc-src
   install_boinc $BOINC_DIR
-  mkdir -p $BUILD_DIR/boinc
-  cp -R $BOINC_DIR/* $BUILD_DIR/boinc
+
+  echo "-----> Making BOINC Project... "
+  #cd $BOINC_DIR
+  #./tools/make_project
 else
   echo "-----> Using cached BOINC Server... "
 fi
+
 
 # populate profile.d
 PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
