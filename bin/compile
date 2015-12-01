@@ -3,30 +3,21 @@
 # fail fast
 set -eu
 
-indent() {
-  sed -u 's/^/       /'
-}
-
-cache_copy() {
-  rel_dir=$1
-  from_dir=$2
-  to_dir=$3
-  rm -rf $to_dir/$rel_dir
-  if [ -d $from_dir/$rel_dir ]; then
-    mkdir -p $to_dir/$rel_dir
-    cp -pr $from_dir/$rel_dir/. $to_dir/$rel_dir
-  fi
-}
-
 # parse args
 BUILD_DIR=$1
 CACHE_DIR=$2
+ENV_DIR=$3
 
-BP_DIR="$(cd "$(dirname "$0")" && pwd)"
-OPT_DIR=$BP_DIR/../opt/
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+BP_DIR=$BIN_DIR/..
+OPT_DIR=$BP_DIR/opt/
+
+. $BP_DIR/lib/common.sh
+
+export_env_dir $ENV_DIR
 
 # unpack existing cache
-CACHED_DIRS="boinc .apt"
+CACHED_DIRS="boinc-src .apt"
 for DIR in $CACHED_DIRS; do
   if [ ! -d $BUILD_DIR/$DIR ]; then
     cache_copy $DIR $CACHE_DIR $BUILD_DIR
@@ -84,17 +75,16 @@ install_boinc() {
   cd -
 }
 
-if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc ]; then
+if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc-src ]; then
   BOINC_DIR=$BUILD_DIR/boinc-src
   install_boinc $BOINC_DIR
 
   echo "-----> Making BOINC Project... "
-  #cd $BOINC_DIR
+  #cd $BUILD_DIR
   #./tools/make_project
 else
   echo "-----> Using cached BOINC Server... "
 fi
-
 
 # populate profile.d
 PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
