@@ -21,11 +21,11 @@ set_jdbc_url() {
 }
 
 if [ -n "$DATABASE_URL" ]; then
-    set_jdbc_url "$DATABASE_URL"
+  set_jdbc_url "$DATABASE_URL"
 elif [ -n "$JAWSDB_URL" ]; then
-    set_jdbc_url "$JAWSDB_URL"
+  set_jdbc_url "$JAWSDB_URL"
 elif [ -n "$CLEARDB_DATABASE_URL" ]; then
-    set_jdbc_url "$CLEARDB_DATABASE_URL"
+  set_jdbc_url "$CLEARDB_DATABASE_URL"
 fi
 
 cat <<EOF >>config.xml
@@ -33,7 +33,7 @@ cat <<EOF >>config.xml
   <config>
     <db_name>${DATABASE_NAME}</db_name>
     <db_host>${DATABASE_HOST}</db_host>
-    <db_user>${DATABASE_USER}</db_user>
+    <db_user>${DATABASE_USERNAME}</db_user>
     <db_passwd>${DATABASE_PASSWORD}</db_passwd>
   </config>
 </boinc>

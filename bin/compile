@@ -62,7 +62,7 @@ EOF
   done
 }
 
-if [ "$REINSTALL_DEPS" = "true" ] || [ ! -d $BUILD_DIR/.apt ]; then
+if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
   install_deps
 else
   echo "-----> Using cached MySQL Client... "
@@ -84,7 +84,7 @@ install_boinc() {
   cd -
 }
 
-if [ "$REBUILD_BOINC" = "true" ] || [ ! -d $BUILD_DIR/boinc ]; then
+if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc ]; then
   BOINC_DIR=/tmp/boinc-src
   install_boinc $BOINC_DIR
   mkdir -p $BUILD_DIR/boinc
@@ -96,6 +96,7 @@ fi
 # populate profile.d
 PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
 mkdir -p $(dirname $PROFILE_PATH)
+cp $OPT_DIR/boinc.sh $PROFILE_PATH
 echo "export PATH=\$HOME/.apt/usr/bin:\$PATH" >> $PROFILE_PATH
 
 # repack cache with new assets
