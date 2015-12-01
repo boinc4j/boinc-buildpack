@@ -26,7 +26,7 @@ BP_DIR="$(cd "$(dirname "$0")" && pwd)"
 OPT_DIR=$BP_DIR/../opt/
 
 # unpack existing cache
-CACHED_DIRS="boinic .apt"
+CACHED_DIRS="boinc .apt"
 for DIR in $CACHED_DIRS; do
   if [ ! -d $BUILD_DIR/$DIR ]; then
     cache_copy $DIR $CACHE_DIR $BUILD_DIR
@@ -56,20 +56,20 @@ export CPATH="\$INCLUDE_PATH"
 export CPPPATH="\$INCLUDE_PATH"
 export PKG_CONFIG_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:\$HOME/.apt/usr/lib/i386-linux-gnu/pkgconfig:\$HOME/.apt/usr/lib/pkgconfig:\$PKG_CONFIG_PATH"
 EOF
+
+  for DEB in $(ls -1 $APT_CACHE_DIR/archives/*.deb); do
+    dpkg -x $DEB $BUILD_DIR/.apt/
+  done
 }
 
-if [ ! -d $BUILD_DIR/boinc ]; then
+if [ ! -d $BUILD_DIR/.apt ]; then
   install_deps
 fi
-
-for DEB in $(ls -1 $APT_CACHE_DIR/archives/*.deb); do
-  dpkg -x $DEB $BUILD_DIR/.apt/
-done
 
 install_boinc() {
   #### Download BOINC source
   echo -n "-----> Downloading BOINC... "
-  BOINC_DIR=/tmp/boinc-src
+  BOINC_DIR=${1}
   mkdir -p $BOINC_DIR
   curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C $BOINC_DIR --strip-components=1
 
@@ -79,12 +79,14 @@ install_boinc() {
   ./_autosetup
   ./configure --disable-client --disable-manager
   make
+  cd -
 }
 
 if [ ! -d $BUILD_DIR/boinc ]; then
-  install_boinc
+  BOINC_DIR=/tmp/boinc-src
+  install_boinc $BOINC_DIR
   mkdir -p $BUILD_DIR/boinc
-  cp -R * $BUILD_DIR/boinc
+  cp -R $BOINC_DIR/* $BUILD_DIR/boinc
 fi
 
 # repack cache with new assets
