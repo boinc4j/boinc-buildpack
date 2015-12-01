@@ -16,4 +16,14 @@ OPT_DIR=$BP_DIR/../opt/
 
 #### Download BOINC source
 echo -n "-----> Downloading BOINC... "
-curl --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C boinc-src
+BOINC_DIR=/tmp/boinc-src
+mkdir -p $BOINC_DIR
+curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C $BOINC_DIR --strip-components=1
+
+cd $BOINC_DIR
+./_autosetup
+./configure --disable-client --disable-manager
+make
+
+mkdir -p $BUILD_DIR/boinc
+cp -R * $BUILD_DIR/boinc
