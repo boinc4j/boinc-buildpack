@@ -18,7 +18,7 @@ OPT_DIR=$BP_DIR/opt/
 export_env_dir $ENV_DIR
 
 # unpack existing cache
-CACHED_DIRS="boinc-src .apt"
+CACHED_DIRS="boinc-src .apt project"
 for DIR in $CACHED_DIRS; do
   if [ ! -d $BUILD_DIR/$DIR ]; then
     cache_copy $DIR $CACHE_DIR $BUILD_DIR
@@ -34,20 +34,9 @@ install_deps() {
   mkdir -p "$APT_CACHE_DIR/archives/partial"
   mkdir -p "$APT_STATE_DIR/lists/partial"
 
-  echo "-----> Installing mysql-client, python-mysqldb... "
+  echo "-----> Installing dependencies... "
   apt-get $APT_OPTIONS update | indent
   apt-get $APT_OPTIONS -y --force-yes -d install --reinstall mysql-client python-mysqldb | indent
-  mkdir -p $BUILD_DIR/.profile.d
-
-  cat <<EOF >$BUILD_DIR/.profile.d/000_apt.sh
-export PATH="\$HOME/.apt/usr/sbin:\$PATH"
-export LD_LIBRARY_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu:\$HOME/.apt/usr/lib/i386-linux-gnu:\$HOME/.apt/usr/lib:\$LD_LIBRARY_PATH"
-export LIBRARY_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu:\$HOME/.apt/usr/lib/i386-linux-gnu:\$HOME/.apt/usr/lib:\$LIBRARY_PATH"
-export INCLUDE_PATH="\$HOME/.apt/usr/include:\$INCLUDE_PATH"
-export CPATH="\$INCLUDE_PATH"
-export CPPPATH="\$INCLUDE_PATH"
-export PKG_CONFIG_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:\$HOME/.apt/usr/lib/i386-linux-gnu/pkgconfig:\$HOME/.apt/usr/lib/pkgconfig:\$PKG_CONFIG_PATH"
-EOF
 
   for DEB in $(ls -1 $APT_CACHE_DIR/archives/*.deb); do
     dpkg -x $DEB $BUILD_DIR/.apt/
@@ -55,10 +44,22 @@ EOF
 }
 
 if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
+  rm -rf $BUILD_DIR/.apt
   install_deps
 else
-  echo "-----> Using cached MySQL Client... "
+  echo "-----> Using cached dependencies... "
 fi
+
+mkdir -p $BUILD_DIR/.profile.d
+cat <<EOF >$BUILD_DIR/.profile.d/000_apt.sh
+export PATH="\$HOME/.apt/usr/sbin:\$HOME/.apt/usr/bin:\$PATH"
+export LD_LIBRARY_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu:\$HOME/.apt/usr/lib/i386-linux-gnu:\$HOME/.apt/usr/lib:\$LD_LIBRARY_PATH"
+export LIBRARY_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu:\$HOME/.apt/usr/lib/i386-linux-gnu:\$HOME/.apt/usr/lib:\$LIBRARY_PATH"
+export INCLUDE_PATH="\$HOME/.apt/usr/include:\$INCLUDE_PATH"
+export CPATH="\$INCLUDE_PATH"
+export CPPPATH="\$INCLUDE_PATH"
+export PKG_CONFIG_PATH="\$HOME/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:\$HOME/.apt/usr/lib/i386-linux-gnu/pkgconfig:\$HOME/.apt/usr/lib/pkgconfig:\$PKG_CONFIG_PATH"
+EOF
 
 install_boinc() {
   #### Download BOINC source
@@ -73,7 +74,7 @@ install_boinc() {
   ./_autosetup
   ./configure --disable-client --disable-manager
   make
-  cd -
+  cd - > /dev/null 2>&1
 }
 
 BOINC_DIR=/app/boinc-src
@@ -85,7 +86,7 @@ else
   mv $BUILD_DIR/boinc-src $BOINC_DIR
 fi
 
-if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/projects ]; then
+if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/project ]; then
   echo "-----> Making BOINC Project... "
 
   # TODO this needs to happen in release phase?
@@ -98,8 +99,6 @@ if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/projects ]; then
   else
     echo "You must provision a database: heroku addons:create cleardb"
   fi
-
-  export PROJECT_NAME="myapp"
 
   # TODO if db is already primed set NO_DB?
 
@@ -118,10 +117,17 @@ if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/projects ]; then
   cd $BOINC_DIR
   sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
 
-  ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD --no_db \
-                 --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root $BUILD_DIR/projects/$PROJECT_NAME \
-                 $PROJECT_NAME "My App"
-   cd -
+  if [ -d $BUILD_DIR/project ]; then
+    export NO_DB="--no_db"
+    rm -rf $BUILD_DIR/project
+  fi
+
+  ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""} \
+                 --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root /app/project \
+                 myapp "My App" | indent
+
+  mv /app/project $BUILD_DIR/project
+  cd - > /dev/null 2>&1
 else
   echo "-----> Using cached BOINC Project... "
 fi
@@ -132,7 +138,6 @@ mv $BOINC_DIR $BUILD_DIR/boinc-src
 # populate profile.d
 PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
 mkdir -p $(dirname $PROFILE_PATH)
-echo "export PATH=\$HOME/.apt/usr/bin:\$PATH" >> $PROFILE_PATH
 echo "export PYTHONPATH=\$HOME/.apt/usr/lib/python2.7/dist-packages" >> $PROFILE_PATH
 
 # repack cache with new assets
