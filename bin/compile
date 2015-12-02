@@ -36,7 +36,7 @@ install_deps() {
 
   echo "-----> Installing dependencies... "
   apt-get $APT_OPTIONS update | indent
-  apt-get $APT_OPTIONS -y --force-yes -d install --reinstall mysql-client python-mysqldb | indent
+  apt-get $APT_OPTIONS -y --force-yes -d install --reinstall mysql-client python-mysqldb php5-cli | indent
 
   for DEB in $(ls -1 $APT_CACHE_DIR/archives/*.deb); do
     dpkg -x $DEB $BUILD_DIR/.apt/
@@ -46,6 +46,7 @@ install_deps() {
 if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
   rm -rf $BUILD_DIR/.apt
   install_deps
+  ln -s php5 $BUILD_DIR/.apt/usr/bin/php
 else
   echo "-----> Using cached dependencies... "
 fi
