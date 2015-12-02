@@ -13,6 +13,7 @@ BP_DIR=$BIN_DIR/..
 OPT_DIR=$BP_DIR/opt/
 
 . $BP_DIR/lib/common.sh
+. $BP_DIR/lib/db.sh
 
 export_env_dir $ENV_DIR
 
@@ -33,9 +34,9 @@ install_deps() {
   mkdir -p "$APT_CACHE_DIR/archives/partial"
   mkdir -p "$APT_STATE_DIR/lists/partial"
 
-  echo "-----> Installing mysql-client... "
+  echo "-----> Installing mysql-client, python-mysqldb... "
   apt-get $APT_OPTIONS update | indent
-  apt-get $APT_OPTIONS -y --force-yes -d install --reinstall mysql-client | indent
+  apt-get $APT_OPTIONS -y --force-yes -d install --reinstall mysql-client python-mysqldb | indent
   mkdir -p $BUILD_DIR/.profile.d
 
   cat <<EOF >$BUILD_DIR/.profile.d/000_apt.sh
@@ -61,13 +62,13 @@ fi
 
 install_boinc() {
   #### Download BOINC source
-  echo -n "-----> Downloading BOINC source... "
+  echo "-----> Downloading BOINC source... "
   BOINC_DIR=${1}
   mkdir -p $BOINC_DIR
   curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C $BOINC_DIR --strip-components=1
 
   #### Build BOINC from source
-  echo -n "-----> Making BOINC Server... "
+  echo "-----> Making BOINC Server... "
   cd $BOINC_DIR
   ./_autosetup
   ./configure --disable-client --disable-manager
@@ -76,12 +77,34 @@ install_boinc() {
 }
 
 if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc-src ]; then
-  BOINC_DIR=$BUILD_DIR/boinc-src
+  BOINC_DIR=/app/boinc-src
+  mkdir -p $BOINC_DIR
   install_boinc $BOINC_DIR
 
   echo "-----> Making BOINC Project... "
-  #cd $BUILD_DIR
-  #./tools/make_project
+
+  # TODO this needs to happen in release phase?
+  # but only if db has not been init
+
+  if [ -n "$JAWSDB_URL" ]; then
+    export_db_props "$JAWSDB_URL"
+  elif [ -n "$CLEARDB_DATABASE_URL" ]; then
+    export_db_props "$CLEARDB_DATABASE_URL"
+  else
+    echo "You must provision a database: heroku addons:create cleardb"
+  fi
+
+  export PROJECT_NAME="myapp"
+
+  # TODO if db is already primed set NO_DB?
+
+  cd $BOINC_DIR/tools
+  ./make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:""} \
+                 --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root $BUILD_DIR/projects/$PROJECT_NAME
+                 $PROJECT_NAME "My App"
+
+  rm -rf $BUILD_DIR/boinc-src
+  mv $BOINC_DIR $BUILD_DIR/boinc-src
 else
   echo "-----> Using cached BOINC Server... "
 fi
@@ -89,8 +112,8 @@ fi
 # populate profile.d
 PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
 mkdir -p $(dirname $PROFILE_PATH)
-cp $OPT_DIR/boinc.sh $PROFILE_PATH
 echo "export PATH=\$HOME/.apt/usr/bin:\$PATH" >> $PROFILE_PATH
+echo "export PYTHONPATH=\$HOME/.apt/usr/lib/python2.7/dist-packages" >> $PROFILE_PATH
 
 # repack cache with new assets
 mkdir -p $CACHE_DIR

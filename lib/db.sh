@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set_jdbc_url() {
+set_db_url() {
   local db_url=${1}
 
   local db_user=$(expr "$db_url" : "mysql://\(.\+\):\(.\+\)@")
@@ -19,22 +19,3 @@ set_jdbc_url() {
   export DATABASE_PASSWORD="${db_pass}"
   export DATABASE_NAME="${db_name}"
 }
-
-if [ -n "$DATABASE_URL" ]; then
-  set_jdbc_url "$DATABASE_URL"
-elif [ -n "$JAWSDB_URL" ]; then
-  set_jdbc_url "$JAWSDB_URL"
-elif [ -n "$CLEARDB_DATABASE_URL" ]; then
-  set_jdbc_url "$CLEARDB_DATABASE_URL"
-fi
-
-cat <<EOF >>config.xml
-<boinc>
-  <config>
-    <db_name>${DATABASE_NAME}</db_name>
-    <db_host>${DATABASE_HOST}</db_host>
-    <db_user>${DATABASE_USERNAME}</db_user>
-    <db_passwd>${DATABASE_PASSWORD}</db_passwd>
-  </config>
-</boinc>
-EOF
