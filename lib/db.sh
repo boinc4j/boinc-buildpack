@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set_db_url() {
+export_db_props() {
   local db_url=${1}
 
   local db_user=$(expr "$db_url" : "mysql://\(.\+\):\(.\+\)@")

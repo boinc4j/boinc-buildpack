@@ -76,19 +76,24 @@ install_boinc() {
   cd -
 }
 
+BOINC_DIR=/app/boinc-src
 if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc-src ]; then
-  BOINC_DIR=/app/boinc-src
   mkdir -p $BOINC_DIR
   install_boinc $BOINC_DIR
+else
+  echo "-----> Using cached BOINC Server... "
+  mv $BUILD_DIR/boinc-src $BOINC_DIR
+fi
 
+if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/projects ]; then
   echo "-----> Making BOINC Project... "
 
   # TODO this needs to happen in release phase?
   # but only if db has not been init
 
-  if [ -n "$JAWSDB_URL" ]; then
+  if [ -n "${JAWSDB_URL:-""}" ]; then
     export_db_props "$JAWSDB_URL"
-  elif [ -n "$CLEARDB_DATABASE_URL" ]; then
+  elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
     export_db_props "$CLEARDB_DATABASE_URL"
   else
     echo "You must provision a database: heroku addons:create cleardb"
@@ -98,16 +103,31 @@ if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc-src ]; then
 
   # TODO if db is already primed set NO_DB?
 
-  cd $BOINC_DIR/tools
-  ./make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:""} \
-                 --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root $BUILD_DIR/projects/$PROJECT_NAME
-                 $PROJECT_NAME "My App"
+  export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
+  export LD_LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
+  export LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
+  export INCLUDE_PATH=$BUILD_DIR/.apt/usr/include
+  export CPATH=$INCLUDE_PATH
+  export CPPPATH=$INCLUDE_PATH
+  export PKG_CONFIG_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig
+  export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
 
-  rm -rf $BUILD_DIR/boinc-src
-  mv $BOINC_DIR $BUILD_DIR/boinc-src
+  export USER=$(whoami)
+
+  # comment out create db
+  cd $BOINC_DIR
+  sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
+
+  ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD --no_db \
+                 --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root $BUILD_DIR/projects/$PROJECT_NAME \
+                 $PROJECT_NAME "My App"
+   cd -
 else
-  echo "-----> Using cached BOINC Server... "
+  echo "-----> Using cached BOINC Project... "
 fi
+
+rm -rf $BUILD_DIR/boinc-src
+mv $BOINC_DIR $BUILD_DIR/boinc-src
 
 # populate profile.d
 PROFILE_PATH="$BUILD_DIR/.profile.d/boinc.sh"
