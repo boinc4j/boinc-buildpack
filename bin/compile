@@ -119,7 +119,8 @@ if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/project ]; then
     rm -rf $BUILD_DIR/project
   fi
 
-  ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""} \
+  DB_OPTS="--db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""}"
+  ./tools/make_project $DB_OPTS \
                  --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root /app/project \
                  myapp "My App" | indent
 
