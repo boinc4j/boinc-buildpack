@@ -89,9 +89,6 @@ fi
 if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/project ]; then
   echo "-----> Making BOINC Project... "
 
-  # TODO this needs to happen in release phase?
-  # but only if db has not been init
-
   if [ -n "${JAWSDB_URL:-""}" ]; then
     export_db_props "$JAWSDB_URL"
   elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
@@ -99,8 +96,6 @@ if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/project ]; then
   else
     echo "You must provision a database: heroku addons:create cleardb"
   fi
-
-  # TODO if db is already primed set NO_DB?
 
   export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
   export LD_LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
@@ -111,14 +106,16 @@ if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/project ]; then
   export PKG_CONFIG_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig
   export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
 
+  # This probably needs to be scrubed in profile.d
   export USER=$(whoami)
 
-  # comment out create db
   cd $BOINC_DIR
+
+  # Never create the db, but still load the schema
   sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
 
   if [ -d $BUILD_DIR/project ]; then
-    export NO_DB="--no_db"
+    NO_DB="--no_db"
     rm -rf $BUILD_DIR/project
   fi
 
