@@ -34,7 +34,6 @@ if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
 else
   echo "-----> Using cached dependencies... "
 fi
-#create_deps_profile $BUILD_DIR
 
 install_boinc() {
   #### Download BOINC source
@@ -72,12 +71,6 @@ else
 fi
 
 export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
-#export LD_LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
-#export LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
-#export INCLUDE_PATH=$BUILD_DIR/.apt/usr/include
-#export CPATH=$INCLUDE_PATH
-#export CPPPATH=$INCLUDE_PATH
-#export PKG_CONFIG_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig
 export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
 
 # This probably needs to be scrubed in profile.d
@@ -89,6 +82,8 @@ cd $BOINC_DIR
 sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
 
 if [ -f $BUILD_DIR/project/config.xml ]; then
+  # There's a bug here. If the cache is purged, the make_project will fail because the tables exist
+  # This really needs to check if the tables exist, not the config
   NO_DB="--no_db"
 fi
 
