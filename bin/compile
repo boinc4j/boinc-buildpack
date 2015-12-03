@@ -87,49 +87,46 @@ else
   mv $BUILD_DIR/boinc-src $BOINC_DIR
 fi
 
-if [ -n "${REMAKE_PROJECT:-""}" ] || [ ! -d $BUILD_DIR/project ]; then
-  echo "-----> Making BOINC Project... "
+echo "-----> Making BOINC Project... "
 
-  if [ -n "${JAWSDB_URL:-""}" ]; then
-    export_db_props "$JAWSDB_URL"
-  elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
-    export_db_props "$CLEARDB_DATABASE_URL"
-  else
-    echo "You must provision a database: heroku addons:create cleardb"
-  fi
-
-  export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
-  export LD_LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
-  export LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
-  export INCLUDE_PATH=$BUILD_DIR/.apt/usr/include
-  export CPATH=$INCLUDE_PATH
-  export CPPPATH=$INCLUDE_PATH
-  export PKG_CONFIG_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig
-  export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
-
-  # This probably needs to be scrubed in profile.d
-  export USER=$(whoami)
-
-  cd $BOINC_DIR
-
-  # Never create the db, but still load the schema
-  sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
-
-  if [ -d $BUILD_DIR/project ]; then
-    NO_DB="--no_db"
-    rm -rf $BUILD_DIR/project
-  fi
-
-  DB_OPTS="--db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""}"
-  ./tools/make_project $DB_OPTS \
-                 --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root /app/project \
-                 myapp "My App" | indent
-
-  mv /app/project $BUILD_DIR/project
-  cd - > /dev/null 2>&1
+if [ -n "${JAWSDB_URL:-""}" ]; then
+  export_db_props "$JAWSDB_URL"
+elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
+  export_db_props "$CLEARDB_DATABASE_URL"
 else
-  echo "-----> Using cached BOINC Project... "
+  echo "You must provision a database: heroku addons:create cleardb"
 fi
+
+export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
+export LD_LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
+export LIBRARY_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu:$BUILD_DIR/.apt/usr/lib/i386-linux-gnu:$BUILD_DIR/.apt/usr/lib
+export INCLUDE_PATH=$BUILD_DIR/.apt/usr/include
+export CPATH=$INCLUDE_PATH
+export CPPPATH=$INCLUDE_PATH
+export PKG_CONFIG_PATH=$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUILD_DIR/.apt/usr/lib/pkgconfig
+export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
+
+# This probably needs to be scrubed in profile.d
+export USER=$(whoami)
+
+cd $BOINC_DIR
+
+# Never create the db, but still load the schema
+sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
+
+if [ -f $BUILD_DIR/project/config.xml ]; then
+  NO_DB="--no_db"
+fi
+
+DB_OPTS="--db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""}"
+./tools/make_project $DB_OPTS \
+                     --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root /app/project \
+                     --url_base "http://$APP_NAME.herokuapp.com" --project_host "$APP_NAME.herokuapp.com" \
+                     boinc "BOINC Template" | indent
+
+rm -rf $BUILD_DIR/project
+mv /app/project $BUILD_DIR/project
+cd - > /dev/null 2>&1
 
 rm -rf $BUILD_DIR/boinc-src
 mv $BOINC_DIR $BUILD_DIR/boinc-src
