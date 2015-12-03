@@ -10,8 +10,8 @@ install_boinc() {
   #### Build BOINC from source
   echo "-----> Making BOINC Server... "
   cd $BOINC_DIR
-  ./_autosetup | indent
-  ./configure --disable-client --disable-manager | indent
+  ./_autosetup
+  ./configure --disable-client --disable-manager
   make
   cd - > /dev/null 2>&1
 }
