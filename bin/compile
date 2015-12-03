@@ -16,6 +16,7 @@ LIB_DIR=$BP_DIR/lib/
 . $LIB_DIR/common.sh
 . $LIB_DIR/db.sh
 . $LIB_DIR/deps.sh
+. $LIB_DIR/boinc.sh
 
 export_env_dir $ENV_DIR
 
@@ -35,22 +36,6 @@ else
   echo "-----> Using cached dependencies... "
 fi
 
-install_boinc() {
-  #### Download BOINC source
-  echo "-----> Downloading BOINC source... "
-  BOINC_DIR=${1}
-  mkdir -p $BOINC_DIR
-  curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C $BOINC_DIR --strip-components=1
-
-  #### Build BOINC from source
-  echo "-----> Making BOINC Server... "
-  cd $BOINC_DIR
-  ./_autosetup | indent
-  ./configure --disable-client --disable-manager | indent
-  make
-  cd - > /dev/null 2>&1
-}
-
 BOINC_DIR=/app/boinc-src
 if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc-src ]; then
   mkdir -p $BOINC_DIR
@@ -67,7 +52,8 @@ if [ -n "${JAWSDB_URL:-""}" ]; then
 elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
   export_db_props "$CLEARDB_DATABASE_URL"
 else
-  echo "You must provision a database: heroku addons:create cleardb"
+  echo "ERROR: You must provision a database: heroku addons:create cleardb"
+  exit 1
 fi
 
 export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
@@ -85,6 +71,12 @@ if [ -f $BUILD_DIR/project/config.xml ]; then
   # There's a bug here. If the cache is purged, the make_project will fail because the tables exist
   # This really needs to check if the tables exist, not the config
   NO_DB="--no_db"
+fi
+
+if [ -z "$APP_NAME" ]; then
+  # Once dyno metadata is available, we can drop this
+  echo "ERROR: You must set APP_NAME manually."
+  exit 1
 fi
 
 DB_OPTS="--db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""}"
