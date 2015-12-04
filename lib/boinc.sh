@@ -23,3 +23,23 @@ add_project_xml() {
   sed -i.bak s/example_app/${projectName}/g ${projectXml}
   sed -i.bak s/Example\ Application/${projectName}/g ${projectXml}
 }
+
+create_start_script() {
+  cat <<EOF > start.sh
+#!/usr/bin/env bash
+
+if [ "\$DYNO" = "web.1" ]; then
+  echo "Starting daemons..."
+  cd project/
+  sed -i.bak s/\<host\>.*\</\<host\>\$(hostname)\</g config.xml
+  bin/start &
+fi
+
+cd /app
+vendor/bin/heroku-php-apache2 -C project/boinc.httpd.conf -p \$PORT
+EOF
+
+  cat <<EOF > Procfile
+web: sh start.sh
+EOF
+}
