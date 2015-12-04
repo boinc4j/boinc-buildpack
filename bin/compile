@@ -106,6 +106,10 @@ BOINC_PROJECT_DIR=/app/project
                      --project_host "$APP_NAME.herokuapp.com" \
                      boinc $APP_NAME | indent
 
+if [ -n "${OPS_USERNAME:-}" ] && [ -n "${OPS_PASSWORD:-}" ]; then
+  htpasswd -cb $BOINC_PROJECT_DIR/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD
+fi
+
 ##################
 # Install the app
 ##################
@@ -114,7 +118,7 @@ cd $BOINC_PROJECT_DIR
 add_project_xml $BOINC_PROJECT_DIR/project.xml $APP_NAME
 bin/xadd | indent
 
-APP_VERSION=3
+APP_VERSION=4
 REL_APP_DIR=apps/$APP_NAME/$APP_VERSION
 
 # TODO

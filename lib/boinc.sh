@@ -33,6 +33,8 @@ if [ "\$DYNO" = "web.1" ]; then
   cd project/
   sed -i.bak s/\<host\>.*\</\<host\>\$(hostname)\</g config.xml
   bin/start &
+  sleep 3
+  tail /app/project/log_\$(hostname)/* &
 fi
 
 cd /app
