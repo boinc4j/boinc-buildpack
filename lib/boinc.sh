@@ -21,5 +21,5 @@ add_project_xml() {
   local projectName=${2}
 
   sed -i.bak s/example_app/${projectName}/g ${projectXml}
-  sed -i.bak s/Example\ Application/Default\ Application/g ${projectXml}
+  sed -i.bak s/Example\ Application/${projectName}/g ${projectXml}
 }
