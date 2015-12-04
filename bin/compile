@@ -20,6 +20,29 @@ LIB_DIR=$BP_DIR/lib/
 
 export_env_dir $ENV_DIR
 
+
+### Validate App
+
+if [ -z "$APP_NAME" ]; then
+  # Once dyno metadata is available, we can drop this
+  echo "ERROR: You must set APP_NAME manually."
+  exit 1
+fi
+
+if [ ! -d $BUILD_DIR/target/boinc/app ]; then
+  echo "ERROR: No app found in target/boinc/app"
+  #exit 1
+fi
+
+if [ -n "${JAWSDB_URL:-""}" ]; then
+  export_db_props "$JAWSDB_URL"
+elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
+  export_db_props "$CLEARDB_DATABASE_URL"
+else
+  echo "ERROR: You must provision a database: $ heroku addons:create cleardb"
+  exit 1
+fi
+
 # unpack existing cache
 CACHED_DIRS="boinc-src .apt project"
 for DIR in $CACHED_DIRS; do
@@ -30,8 +53,7 @@ done
 
 if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
   rm -rf $BUILD_DIR/.apt
-  install_deps $BUILD_DIR "mysql-client python-mysqldb php5-cli"
-  ln -s php5 $BUILD_DIR/.apt/usr/bin/php
+  install_deps $BUILD_DIR "mysql-client python-mysqldb"
 else
   echo "-----> Using cached dependencies... "
 fi
@@ -47,19 +69,11 @@ fi
 
 echo "-----> Making BOINC Project... "
 
-if [ -n "${JAWSDB_URL:-""}" ]; then
-  export_db_props "$JAWSDB_URL"
-elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
-  export_db_props "$CLEARDB_DATABASE_URL"
-else
-  echo "ERROR: You must provision a database: heroku addons:create cleardb"
-  exit 1
-fi
-
 export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
 export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
+export PATH=/app/.heroku/php/bin:$BUILD_DIR/.heroku/php/bin:$PATH
 
-# This probably needs to be scrubed in profile.d
+# Whatever this is used for probably needs to be scrubed in profile.d
 export USER=$(whoami)
 
 cd $BOINC_DIR
@@ -73,21 +87,42 @@ if [ -f $BUILD_DIR/project/config.xml ]; then
   NO_DB="--no_db"
 fi
 
-if [ -z "$APP_NAME" ]; then
-  # Once dyno metadata is available, we can drop this
-  echo "ERROR: You must set APP_NAME manually."
-  exit 1
-fi
-
+BOINC_PROJECT_DIR=/app/project
 DB_OPTS="--db_host $DATABASE_HOST --db_name $DATABASE_NAME --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${NO_DB:-""}"
 ./tools/make_project $DB_OPTS \
-                     --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root /app/project \
+                     --user_name $(whoami) --no_query --srcdir $BOINC_DIR --project_root $BOINC_PROJECT_DIR \
                      --url_base "https://$APP_NAME.herokuapp.com" --project_host "$APP_NAME.herokuapp.com" \
                      boinc "BOINC Template" | indent
 
-rm -rf $BUILD_DIR/project
-mv /app/project $BUILD_DIR/project
+
+echo "-----> Installing BOINC App... "
+cd $BOINC_PROJECT_DIR
+add_project_xml $BOINC_PROJECT_DIR/project.xml $APP_NAME
+bin/xadd | indent
+
+# TODO
+env
+
+#mv $BUILD_DIR/target/boinc/app $BOINC_PROJECT_DIR/project/apps/$APP_NAME
+mkdir -p apps/$APP_NAME/1/x86_64-apple-darwin
+echo "
+#!/usr/bin/env bash
+echo foobar
+" >  apps/$APP_NAME/1/x86_64-apple-darwin/test.sh
+chmod +x apps/$APP_NAME/1/x86_64-apple-darwin/test.sh
+
+$BOINC_DIR/lib/crypt_prog -sign apps/$APP_NAME/1/x86_64-apple-darwin/test.sh keys/code_sign_private > apps/$APP_NAME/1/x86_64-apple-darwin/test.sh.sig
+
+# We might need to cache these instead
+rm keys/code_sign_private
+rm keys/upload_private
+
+yes | bin/update_versions | indent
 cd - > /dev/null 2>&1
+
+echo "-----> Finalizing... "
+rm -rf $BUILD_DIR/project
+mv $BOINC_PROJECT_DIR $BUILD_DIR/project
 
 rm -rf $BUILD_DIR/boinc-src
 mv $BOINC_DIR $BUILD_DIR/boinc-src
@@ -104,4 +139,5 @@ for DIR in $CACHED_DIRS; do
 done
 
 # Remove build-only files from slug
-rm -rf $BUILD_DIR/boinc-src $BUILD_DIR/.apt
+rm -rf $BUILD_DIR/boinc-src
+rm -rf $BUILD_DIR/.apt

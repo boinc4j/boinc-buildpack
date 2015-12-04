@@ -15,3 +15,11 @@ install_boinc() {
   make
   cd - > /dev/null 2>&1
 }
+
+add_project_xml() {
+  local projectXml=${1}
+  local projectName=${2}
+
+  sed -i.bak s/example_app/${projectName}/g ${projectXml}
+  sed -i.bak s/Example\ Application/Default\ Application/g ${projectXml}
+}
