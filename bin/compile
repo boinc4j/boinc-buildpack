@@ -17,12 +17,17 @@ LIB_DIR=$BP_DIR/lib/
 . $LIB_DIR/db.sh
 . $LIB_DIR/deps.sh
 . $LIB_DIR/boinc.sh
+. $LIB_DIR/apache2.sh
 
 export_env_dir $ENV_DIR
 
 #########################
 ### Validate App & Setup
 ########################
+if [ ! -d $BUILD_DIR/.heroku/php ]; then
+  echo "ERROR: You must run the heroku/php buildpack first!"
+  exit 1
+fi
 if [ -z "$APP_NAME" ]; then
   # Once dyno metadata is available, we can drop this
   echo "ERROR: You must set APP_NAME manually."
@@ -235,3 +240,6 @@ done
 # Remove build-only files from slug
 rm -rf $BUILD_DIR/boinc-src
 rm -rf $BUILD_DIR/.apt
+
+apache_enable_cgid
+apache_add_index_php

@@ -25,7 +25,7 @@ add_project_xml() {
 }
 
 create_start_script() {
-  cat <<EOF > start.sh
+  cat <<EOF > start-boinc.sh
 #!/usr/bin/env bash
 
 if [ "\$DYNO" = "web.1" ]; then
@@ -39,9 +39,5 @@ fi
 
 cd /app
 vendor/bin/heroku-php-apache2 -C project/boinc.httpd.conf -p \$PORT
-EOF
-
-  cat <<EOF > Procfile
-web: sh start.sh
 EOF
 }
