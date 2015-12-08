@@ -112,7 +112,7 @@ BOINC_PROJECT_DIR=/app/project
                      boinc $APP_NAME | indent
 
 if [ -n "${OPS_USERNAME:-}" ] && [ -n "${OPS_PASSWORD:-}" ]; then
-  htpasswd -cb $BOINC_PROJECT_DIR/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD
+  htpasswd -cb $BOINC_PROJECT_DIR/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD | indent
 fi
 
 ##################
@@ -123,7 +123,7 @@ cd $BOINC_PROJECT_DIR
 add_project_xml $BOINC_PROJECT_DIR/project.xml $APP_NAME
 bin/xadd | indent
 
-APP_VERSION=4
+APP_VERSION=1
 REL_APP_DIR=apps/$APP_NAME/$APP_VERSION
 
 # TODO
@@ -160,27 +160,33 @@ echo "
    <file>
       <physical_name>wrapper_26014_x86_64-apple-darwin</physical_name>
       <main_program/>
+      <copy_file/>
    </file>
    <file>
       <physical_name>test.sh</physical_name>
-      <logical_name>worker</logical_name>
+      <logical_name>test.sh</logical_name>
+      <copy_file/>
    </file>
    <file>
       <physical_name>job.xml</physical_name>
       <logical_name>job.xml</logical_name>
+      <copy_file/>
    </file>
+   <is_wrapper/>
 </version>
 " >  $REL_APP_DIR/x86_64-apple-darwin/version.xml
 echo "
 <input_template>
   <file_info>
     <number>0</number>
+    <url>https://dl.dropboxusercontent.com/u/1935391/</url>
+    <md5_cksum>14758f1afd44c09b7992073ccf00b43d</md5_cksum>
+    <nbytes>7</nbytes>
   </file_info>
   <workunit>
     <file_ref>
       <file_number>0</file_number>
-      <open_name>in</open_name>
-      <copy_file/>
+      <open_name>in.txt</open_name>
     </file_ref>
     <rsc_fpops_bound>1e12</rsc_fpops_bound>
     <rsc_fpops_est>1e14</rsc_fpops_est>
@@ -205,7 +211,6 @@ echo "
   </result>
 </output_template>
 " >  templates/${APP_NAME}_out
-chmod +x $REL_APP_DIR/x86_64-apple-darwin/test.sh
 
 $BOINC_DIR/lib/crypt_prog -sign $REL_APP_DIR/x86_64-apple-darwin/test.sh keys/code_sign_private > $REL_APP_DIR/x86_64-apple-darwin/test.sh.sig
 $BOINC_DIR/lib/crypt_prog -sign $REL_APP_DIR/x86_64-apple-darwin/job.xml keys/code_sign_private > $REL_APP_DIR/x86_64-apple-darwin/job.xml.sig

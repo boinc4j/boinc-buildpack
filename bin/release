@@ -7,6 +7,4 @@ cat <<EOF
 ---
 addons:
   cleardb
-default_process_types:
-  web: sh start-boinc.sh
 EOF

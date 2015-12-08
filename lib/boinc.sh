@@ -40,4 +40,7 @@ fi
 cd /app
 vendor/bin/heroku-php-apache2 -C project/boinc.httpd.conf -p \$PORT
 EOF
+  cat <<EOF >> Procfile
+web: sh start-boinc.sh
+EOF
 }
