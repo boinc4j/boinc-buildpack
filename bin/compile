@@ -120,105 +120,23 @@ fi
 ##################
 echo "-----> Installing BOINC App... "
 cd $BOINC_PROJECT_DIR
+
+USR_BOINC_DIR=$BUILD_DIR/target/boinc
+
 add_project_xml $BOINC_PROJECT_DIR/project.xml $APP_NAME
 bin/xadd | indent
 
-APP_VERSION=1
-REL_APP_DIR=apps/$APP_NAME/$APP_VERSION
+APP_DIR=apps/$APP_NAME
 
-# TODO
-# increment version on each deploy
-# delete old versions? or keep from cache? (may require correct public key)
+# Copy the provided app files into the build dir
+mv $USR_BOINC_DIR/app $APP_DIR
 
-mkdir -p $REL_APP_DIR/x86_64-apple-darwin
+cp $USR_BOINC_DIR/templates/* templates/
 
-#mv $BUILD_DIR/target/boinc/app $BOINC_PROJECT_DIR/project/apps/$APP_NAME
+sign_files $BOINC_DIR $APP_DIR/*
 
-curl -O -s -L http://boinc.berkeley.edu/dl/wrapper_26014_x86_64-apple-darwin.zip
-unzip wrapper_26014_x86_64-apple-darwin.zip
-mv wrapper_26014_x86_64-apple-darwin $REL_APP_DIR/x86_64-apple-darwin/wrapper_26014_x86_64-apple-darwin
-
-echo "
-#!/usr/bin/env bash
-
-for i in $(seq -s " " 1 999); do
-  sleep 1
-  echo working\${i}
-  echo foobar\${i} > tmp\${i}.txt
-done
-" >  $REL_APP_DIR/x86_64-apple-darwin/test.sh
-echo "
-<job_desc>
-    <task>
-        <application>$APP_NAME</application>
-        <command_line>10</command_line>
-    </task>
-</job_desc>
-" >  $REL_APP_DIR/x86_64-apple-darwin/job.xml
-echo "
-<version>
-   <file>
-      <physical_name>wrapper_26014_x86_64-apple-darwin</physical_name>
-      <main_program/>
-      <copy_file/>
-   </file>
-   <file>
-      <physical_name>test.sh</physical_name>
-      <logical_name>test.sh</logical_name>
-      <copy_file/>
-   </file>
-   <file>
-      <physical_name>job.xml</physical_name>
-      <logical_name>job.xml</logical_name>
-      <copy_file/>
-   </file>
-   <is_wrapper/>
-</version>
-" >  $REL_APP_DIR/x86_64-apple-darwin/version.xml
-echo "
-<input_template>
-  <file_info>
-    <number>0</number>
-    <url>https://dl.dropboxusercontent.com/u/1935391/</url>
-    <md5_cksum>14758f1afd44c09b7992073ccf00b43d</md5_cksum>
-    <nbytes>7</nbytes>
-  </file_info>
-  <workunit>
-    <file_ref>
-      <file_number>0</file_number>
-      <open_name>in.txt</open_name>
-    </file_ref>
-    <rsc_fpops_bound>1e12</rsc_fpops_bound>
-    <rsc_fpops_est>1e14</rsc_fpops_est>
-  </workunit>
-</input_template>
-" >  templates/${APP_NAME}_in
-echo "
-<output_template>
-  <file_info>
-    <name><OUTFILE_0/></name>
-    <generated_locally/>
-    <upload_when_present/>
-    <max_nbytes>5000000</max_nbytes>
-    <url><UPLOAD_URL/></url>
-  </file_info>
-  <result>
-    <file_ref>
-        <file_name><OUTFILE_0/></file_name>
-        <open_name>out</open_name>
-        <copy_file/>
-    </file_ref>
-  </result>
-</output_template>
-" >  templates/${APP_NAME}_out
-
-$BOINC_DIR/lib/crypt_prog -sign $REL_APP_DIR/x86_64-apple-darwin/test.sh keys/code_sign_private > $REL_APP_DIR/x86_64-apple-darwin/test.sh.sig
-$BOINC_DIR/lib/crypt_prog -sign $REL_APP_DIR/x86_64-apple-darwin/job.xml keys/code_sign_private > $REL_APP_DIR/x86_64-apple-darwin/job.xml.sig
-$BOINC_DIR/lib/crypt_prog -sign $REL_APP_DIR/x86_64-apple-darwin/wrapper_26014_x86_64-apple-darwin keys/code_sign_private > $REL_APP_DIR/x86_64-apple-darwin/wrapper_26014_x86_64-apple-darwin.sig
-
-# We might need to cache these instead
+# TODO We need to cache this
 rm keys/code_sign_private
-#rm keys/upload_private
 
 yes | bin/update_versions | indent
 
@@ -245,6 +163,7 @@ done
 # Remove build-only files from slug
 rm -rf $BUILD_DIR/boinc-src
 rm -rf $BUILD_DIR/.apt
+rm -rf $USR_BOINC_DIR
 
 apache_enable_cgid
 apache_add_index_php
