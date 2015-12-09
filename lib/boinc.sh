@@ -78,10 +78,10 @@ install_boinc_app() {
   local boincProjectDir=${3}
   local userBoincDir=${4}
 
+  cd $boincProjectDir
+
   local nextVersion=$(next_boinc_app_version app_version.txt)
   local appDir=apps/$APP_NAME
-
-  cd $boincProjectDir
 
   add_project_xml $boincProjectDir/project.xml $APP_NAME
   bin/xadd | indent
