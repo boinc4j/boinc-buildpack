@@ -133,3 +133,4 @@ apache_enable_cgid
 apache_add_index_php
 
 # TODO move update_versions to here (very last thing)
+# so that if anything else fails we don't get a bogus version in the db
