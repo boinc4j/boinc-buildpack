@@ -21,6 +21,16 @@ LIB_DIR=$BP_DIR/lib/
 
 export_env_dir $ENV_DIR
 
+REL_BOINC_PROJECT_DIR=boinc-project
+BOINC_PROJECT_DIR=/app/$REL_BOINC_PROJECT_DIR
+
+REL_BOINC_DIR=boinc-src
+BOINC_DIR=/app/$REL_BOINC_DIR
+
+USER_BOINC_DIR=$BUILD_DIR/boinc
+
+CACHED_DIRS="REL_BOINC_DIR $REL_BOINC_PROJECT_DIR .apt"
+
 #########################
 ### Validate App & Setup
 ########################
@@ -33,8 +43,8 @@ if [ -z "$APP_NAME" ]; then
   echo "ERROR: You must set APP_NAME manually."
   exit 1
 fi
-if [ ! -d $BUILD_DIR/target/boinc/app ]; then
-  echo "ERROR: No app found in target/boinc/app"
+if [ ! -d $USER_BOINC_DIR ]; then
+  echo "ERROR: No app found in boinc dir!"
   #exit 1
 fi
 if [ -n "${JAWSDB_URL:-""}" ]; then
@@ -49,10 +59,13 @@ fi
 ########################
 # Unpack existing cache
 ########################
-CACHED_DIRS="boinc-src .apt project"
 for DIR in $CACHED_DIRS; do
   if [ ! -d $BUILD_DIR/$DIR ]; then
     cache_copy $DIR $CACHE_DIR $BUILD_DIR
+  else
+    echo "ERROR: Directory $DIR already exists!
+You must leave this name available for the buildpack"
+    exit 1
   fi
 done
 
@@ -69,92 +82,42 @@ fi
 ##########################
 # Build BOINC from source
 ##########################
-BOINC_DIR=/app/boinc-src
-if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/boinc-src ]; then
+if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/$REL_BOINC_DIR ]; then
   mkdir -p $BOINC_DIR
   install_boinc $BOINC_DIR
 else
   echo "-----> Using cached BOINC Server... "
-  mv $BUILD_DIR/boinc-src $BOINC_DIR
+  mv $BUILD_DIR/$REL_BOINC_DIR $BOINC_DIR
 fi
 
 ######################
 # Prepare the project
 ######################
 echo "-----> Making BOINC Project... "
-cd $BOINC_DIR
-
 export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
 export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
 export PATH=/app/.heroku/php/bin:$BUILD_DIR/.heroku/php/bin:$PATH
-
-# Whatever this is used for probably needs to be scrubed in profile.d
-export USER=$(whoami)
-
-# Never create the db, but still load the schema
-sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
-
-if [ -f $BUILD_DIR/project/config.xml ]; then
-  # There's a bug here. If the cache is purged, the make_project will
-  # fail because the tables exist. This really needs to check if the
-  # tables exist, not the config.
-  NO_DB="--no_db"
+if [ -d $BUILD_DIR/$REL_BOINC_PROJECT_DIR ]; then
+  mv $BUILD_DIR/$REL_BOINC_PROJECT_DIR $BOINC_PROJECT_DIR
 fi
-
-BOINC_PROJECT_DIR=/app/project
-
-if [ -d $BUILD_DIR/project ]; then
-  mv $BUILD_DIR/project $BOINC_PROJECT_DIR
-fi
-
-./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME \
-                     --db_user $DATABASE_USERNAME \
-                     --db_passwd $DATABASE_PASSWORD ${NO_DB:-} \
-                     --user_name $(whoami) --no_query --srcdir $BOINC_DIR \
-                     --project_root $BOINC_PROJECT_DIR \
-                     --url_base "https://$APP_NAME.herokuapp.com" \
-                     --project_host "$APP_NAME.herokuapp.com" \
-                     boinc $APP_NAME | indent
-
-if [ -n "${OPS_USERNAME:-}" ] && [ -n "${OPS_PASSWORD:-}" ]; then
-  htpasswd -cb $BOINC_PROJECT_DIR/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD | indent
-fi
+make_boinc_project $BOINC_DIR $BOINC_PROJECT_DIR
 
 ##################
 # Install the app
 ##################
 echo "-----> Installing BOINC App... "
-cd $BOINC_PROJECT_DIR
-
-USR_BOINC_DIR=$BUILD_DIR/target/boinc
-
-add_project_xml $BOINC_PROJECT_DIR/project.xml $APP_NAME
-bin/xadd | indent
-
-APP_DIR=apps/$APP_NAME
-
-# Copy the provided app files into the build dir
-mv $USR_BOINC_DIR/app/* $APP_DIR/
-
-cp $USR_BOINC_DIR/templates/* templates/
-
-sign_files $BOINC_DIR $APP_DIR/*
-
-yes | bin/update_versions | indent
-
-cd $BUILD_DIR
-create_start_script
+install_boinc_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 
 ###################
 # Clean up & Cache
 ###################
 echo "-----> Finalizing... "
 cd $BUILD_DIR
-rm -rf $BUILD_DIR/project
-mv $BOINC_PROJECT_DIR $BUILD_DIR/project
+rm -rf $BUILD_DIR/$REL_BOINC_PROJECT_DIR
+mv $BOINC_PROJECT_DIR $BUILD_DIR/$REL_BOINC_PROJECT_DIR
 
-rm -rf $BUILD_DIR/boinc-src
-mv $BOINC_DIR $BUILD_DIR/boinc-src
+rm -rf $BUILD_DIR/$REL_BOINC_DIR
+mv $BOINC_DIR $BUILD_DIR/$REL_BOINC_DIR
 
 # repack cache with new assets
 mkdir -p $CACHE_DIR
@@ -163,10 +126,10 @@ for DIR in $CACHED_DIRS; do
 done
 
 # Remove build-only files from slug
-rm -rf $BUILD_DIR/boinc-src
+rm -rf $BUILD_DIR/$BOINC_DIR
 rm -rf $BUILD_DIR/.apt
-rm -rf $USR_BOINC_DIR
-rm $BUILD_DIR/project/keys/code_sign_private
+rm -rf $USER_BOINC_DIR
+rm $BUILD_DIR/$REL_BOINC_PROJECT_DIR/keys/code_sign_private
 
 apache_enable_cgid
 apache_add_index_php

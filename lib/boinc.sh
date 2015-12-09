@@ -18,6 +18,38 @@ install_boinc() {
   cd - > /dev/null 2>&1
 }
 
+make_boinc_project() {
+  local boincDir=${1}
+  local boincProjectDir=${2}
+
+  cd ${boincDir}
+
+  # Whatever this is used for probably needs to be scrubed in profile.d
+  export USER=$(whoami)
+
+  # Never create the db, but still load the schema
+  sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
+
+  mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD -h $DATABASE_HOST -e "describe app;" $DATABASE_NAME > /dev/null 2>&1
+  if [ $? == 0 ]; then
+    dbArgs="--no-db"
+  fi
+
+  ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME \
+                       --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${dbArgs:-} \
+                       --user_name $(whoami) --no_query --srcdir $boincDir \
+                       --project_root $boincProjectDir \
+                       --url_base "https://$APP_NAME.herokuapp.com" \
+                       --project_host "$APP_NAME.herokuapp.com" \
+                       boinc $APP_NAME | indent
+
+  if [ -n "${OPS_USERNAME:-}" ] && [ -n "${OPS_PASSWORD:-}" ]; then
+    htpasswd -cb $boincProjectDir/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD | indent
+  fi
+
+  cd - > /dev/null 2>&1
+}
+
 add_project_xml() {
   local projectXml=${1}
   local projectName=${2}
@@ -26,47 +58,55 @@ add_project_xml() {
   sed -i.bak s/Example\ Application/${projectName}/g ${projectXml}
 }
 
-add_wrapper_bin() {
-  local appDir=${1}
-  local platform=${2}
-  local wrapperVersion="26014"
-  local platformDir=${appDir}/${platform}
+next_boinc_app_version() {
+  local versionFile=${1}
 
-  curl -O -s -L http://boinc.berkeley.edu/dl/wrapper_${wrapperVersion}_${platform}.zip
-  unzip wrapper_${wrapperVersion}_${platform}.zip
-  mkdir -p ${platformDir}
-  mv wrapper_${wrapperVersion}_${platform} ${platformDir}/wrapper_${wrapperVersion}_${platform}
-  rm -f wrapper_${wrapperVersion}_${platform}.zip
+  if [ ! -f $versionFile ]; then
+    echo "0" > $versionFile
+  fi
 
-  sed -i.bak -e "s/<\/version>//g" ${platformDir}/version.xml
-  cat <<EOF >> ${platformDir}/version.xml
-   <file>
-      <physical_name>wrapper_${wrapperVersion}_${platform}</physical_name>
-      <main_program/>
-      <copy_file/>
-   </file>
-   <is_wrapper/>
-</version>
-EOF
+  local ver=$(head -n 1 ${versionFile})
+  local nextVersion=${BOINC_APP_VERSION:-$((ver+1))}
+
+  echo "$nextVersion" > ${versionFile}
+  echo "${nextVersion}.0"
 }
 
-add_app_files() {
-    local targetFiles=${1}
-    local appDir=${2}
+install_boinc_app() {
+  local buildDir=${1}
+  local boincDir=${2}
+  local boincProjectDir=${3}
+  local userBoincDir=${4}
 
-    if [ -f version.xml ] && grep -q "<main_program/>" version.xml; then
-      # huh?
-      echo "Non-wrapper apps are not yet supported"
-      exit 1
-    elif [ -f version.xml ]; then
-      for platform in $PLATFORMS; do
-        mv $targetFiles/$platform $appDir/$platform
-        app_wrapper_bins $appDir $platform
-      done
-    else
-      echo "ERROR: no version.xml in $platform"
-      exit 1
-    fi
+  local nextVersion=$(next_boinc_app_version app_version.txt)
+  local appDir=apps/$APP_NAME
+
+  cd $boincProjectDir
+
+  add_project_xml $boincProjectDir/project.xml $APP_NAME
+  bin/xadd | indent
+
+  # Remove all previous versions
+  rm -rf $appDir/*
+  mkdir -p $appDir
+
+  # Load the new version
+  mv $userBoincDir/app $appDir/$nextVersion
+
+  # Copy templates over
+  cp $userBoincDir/templates/* templates/
+
+  # Sign all files in the new version
+  sign_files $boincDir $appDir/*
+
+  yes | bin/update_versions | indent
+
+  cd - > /dev/null 2>&1
+  cd $buildDir
+
+  create_start_script
+
+  cd - > /dev/null 2>&1
 }
 
 sign_files() {
