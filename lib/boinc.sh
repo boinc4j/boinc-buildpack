@@ -80,7 +80,7 @@ install_boinc_app() {
 
   cd $boincProjectDir
 
-  local nextVersion=$(next_boinc_app_version app_version.txt)
+  local nextVersion=$(next_boinc_app_version ${boincProjectDir}/app_version.txt)
   local appDir=apps/$APP_NAME
 
   add_project_xml $boincProjectDir/project.xml $APP_NAME
