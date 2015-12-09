@@ -37,9 +37,9 @@ CACHED_DIRS="$REL_BOINC_DIR $REL_BOINC_PROJECT_DIR .apt"
 if [ ! -d $BUILD_DIR/.heroku/php ]; then
   error "You must run the heroku/php buildpack first!"
 fi
-if [ -z "$APP_NAME" ]; then
+if [ -z "$HEROKU_APP_NAME" ]; then
   # Once dyno metadata is available, we can drop this
-  error "You must set APP_NAME manually."
+  error "You must set HEROKU_APP_NAME manually."
 fi
 if [ ! -d $USER_BOINC_DIR ]; then
   error "No app found in boinc dir!"
@@ -108,11 +108,11 @@ install_boinc_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 ###################
 echo "-----> Finalizing slug contents... "
 cd $BUILD_DIR
-rm -rf $BUILD_DIR/$REL_BOINC_PROJECT_DIR
-mv $BOINC_PROJECT_DIR $BUILD_DIR/$REL_BOINC_PROJECT_DIR
+rm -rf $REL_BOINC_PROJECT_DIR
+mv $BOINC_PROJECT_DIR $REL_BOINC_PROJECT_DIR
 
-rm -rf $BUILD_DIR/$REL_BOINC_DIR
-mv $BOINC_DIR $BUILD_DIR/$REL_BOINC_DIR
+rm -rf $REL_BOINC_DIR
+mv $BOINC_DIR $REL_BOINC_DIR
 
 # repack cache with new assets
 mkdir -p $CACHE_DIR
@@ -121,10 +121,10 @@ for DIR in $CACHED_DIRS; do
 done
 
 # Remove build-only files from slug
-rm -rf $BUILD_DIR/$BOINC_DIR
-rm -rf $BUILD_DIR/.apt
+rm -rf $REL_BOINC_DIR
+rm -rf .apt
 rm -rf $USER_BOINC_DIR
-rm $BUILD_DIR/$REL_BOINC_PROJECT_DIR/keys/code_sign_private
+rm $REL_BOINC_PROJECT_DIR/keys/code_sign_private
 
 apache_enable_cgid
 apache_add_index_php

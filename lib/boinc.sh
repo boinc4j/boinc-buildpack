@@ -39,12 +39,12 @@ make_boinc_project() {
                        --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${dbArgs:-} \
                        --user_name $(whoami) --no_query --srcdir $boincDir \
                        --project_root $boincProjectDir \
-                       --url_base "https://$APP_NAME.herokuapp.com" \
-                       --project_host "$APP_NAME.herokuapp.com" \
-                       boinc $APP_NAME | indent
+                       --url_base "https://$HEROKU_APP_NAME.herokuapp.com" \
+                       --project_host "$HEROKU_APP_NAME.herokuapp.com" \
+                       boinc $HEROKU_APP_NAME | indent
 
-  if [ -n "${OPS_USERNAME:-}" ] && [ -n "${OPS_PASSWORD:-}" ]; then
-    htpasswd -cb $boincProjectDir/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD | indent
+  if [ -n "${BOINC_OPS_USERNAME:-}" ] && [ -n "${BOINC_OPS_PASSWORD:-}" ]; then
+    htpasswd -cb $boincProjectDir/html/ops/.htpasswd $BOINC_OPS_USERNAME $BOINC_OPS_PASSWORD | indent
   fi
 
   cd - > /dev/null 2>&1
@@ -81,9 +81,9 @@ install_boinc_app() {
   cd $boincProjectDir
 
   local nextVersion=$(next_boinc_app_version ${boincProjectDir}/app_version.txt)
-  local appDir=apps/$APP_NAME
+  local appDir=apps/$HEROKU_APP_NAME
 
-  add_project_xml $boincProjectDir/project.xml $APP_NAME
+  add_project_xml $boincProjectDir/project.xml $HEROKU_APP_NAME
   bin/xadd | indent
 
   # Remove all previous versions
