@@ -99,12 +99,11 @@ install_boinc_app() {
   # Sign all files in the new version
   sign_files $boincDir $appDir/*
 
-  yes | bin/update_versions | indent
+  buildLogFile=$(create_build_log_file "update_versions")
 
-  cd - > /dev/null 2>&1
-  cd $buildDir
+  yes | bin/update_versions 2>&1 | output $buildLogFile
 
-  create_start_script
+  handle_update_versions_errors $buildLogFile
 
   cd - > /dev/null 2>&1
 }
@@ -121,22 +120,26 @@ sign_files() {
 }
 
 create_start_script() {
-  cat <<EOF > start-boinc.sh
+  local buildDir=${1}
+  local relBoincProjectDir=${2}
+
+  cat <<EOF > $buildDir/start-boinc.sh
 #!/usr/bin/env bash
 
 if [ "\$DYNO" = "web.1" ]; then
   echo "Starting daemons..."
-  cd project/
+  cd $relBoincProjectDir/
   sed -i.bak s/\<host\>.*\</\<host\>\$(hostname)\</g config.xml
   bin/start &
   sleep 3
-  tail /app/project/log_\$(hostname)/* &
+  tail /app/$relBoincProjectDir/log_\$(hostname)/* &
 fi
 
 cd /app
-vendor/bin/heroku-php-apache2 -C project/boinc.httpd.conf -p \$PORT
+vendor/bin/heroku-php-apache2 -C $relBoincProjectDir/boinc.httpd.conf -p \$PORT
 EOF
-  cat <<EOF >> Procfile
+
+  cat <<EOF >> $buildDir/Procfile
 web: sh start-boinc.sh
 EOF
 }

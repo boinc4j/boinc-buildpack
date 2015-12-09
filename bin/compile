@@ -18,6 +18,7 @@ LIB_DIR=$BP_DIR/lib/
 . $LIB_DIR/deps.sh
 . $LIB_DIR/boinc.sh
 . $LIB_DIR/apache2.sh
+. $LIB_DIR/errors.sh
 
 export_env_dir $ENV_DIR
 
@@ -96,6 +97,8 @@ if [ -d $BUILD_DIR/$REL_BOINC_PROJECT_DIR ]; then
   mv $BUILD_DIR/$REL_BOINC_PROJECT_DIR $BOINC_PROJECT_DIR
 fi
 make_boinc_project $BOINC_DIR $BOINC_PROJECT_DIR
+
+create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
 
 ##################
 # Install the app
