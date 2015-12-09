@@ -4,6 +4,52 @@ indent() {
   sed -u 's/^/       /'
 }
 
+error() {
+  echo
+  echo " !     ERROR: $*" | indent no_first_line_indent
+  echo
+  exit 1
+}
+
+error_return() {
+  echo
+  echo " !     ERROR: $*" | indent no_first_line_indent
+  echo
+  return 1
+}
+
+warning() {
+  echo
+  echo " !     WARNING: $*" | indent no_first_line_indent
+  echo
+}
+
+warning_inline() {
+  echo " !     WARNING: $*" | indent no_first_line_indent
+}
+
+status() {
+  echo "-----> $*"
+}
+
+status_pending() {
+  echo -n "-----> $*..."
+}
+
+status_done() {
+  echo " done"
+}
+
+notice() {
+  echo
+  echo "NOTICE: $*" | indent
+  echo
+}
+
+notice_inline() {
+  echo "NOTICE: $*" | indent
+}
+
 cache_copy() {
   rel_dir=$1
   from_dir=$2

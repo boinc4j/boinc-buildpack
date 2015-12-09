@@ -29,31 +29,27 @@ BOINC_DIR=/app/$REL_BOINC_DIR
 
 USER_BOINC_DIR=$BUILD_DIR/boinc
 
-CACHED_DIRS="REL_BOINC_DIR $REL_BOINC_PROJECT_DIR .apt"
+CACHED_DIRS="$REL_BOINC_DIR $REL_BOINC_PROJECT_DIR .apt"
 
 #########################
 ### Validate App & Setup
 ########################
 if [ ! -d $BUILD_DIR/.heroku/php ]; then
-  echo "ERROR: You must run the heroku/php buildpack first!"
-  exit 1
+  error "You must run the heroku/php buildpack first!"
 fi
 if [ -z "$APP_NAME" ]; then
   # Once dyno metadata is available, we can drop this
-  echo "ERROR: You must set APP_NAME manually."
-  exit 1
+  error "You must set APP_NAME manually."
 fi
 if [ ! -d $USER_BOINC_DIR ]; then
-  echo "ERROR: No app found in boinc dir!"
-  #exit 1
+  error "No app found in boinc dir!"
 fi
 if [ -n "${JAWSDB_URL:-""}" ]; then
   export_db_props "$JAWSDB_URL"
 elif [ -n "${CLEARDB_DATABASE_URL:-""}" ]; then
   export_db_props "$CLEARDB_DATABASE_URL"
 else
-  echo "ERROR: You must provision a database: $ heroku addons:create cleardb"
-  exit 1
+  error "You must provision a database: $ heroku addons:create cleardb"
 fi
 
 ########################
@@ -63,9 +59,8 @@ for DIR in $CACHED_DIRS; do
   if [ ! -d $BUILD_DIR/$DIR ]; then
     cache_copy $DIR $CACHE_DIR $BUILD_DIR
   else
-    echo "ERROR: Directory $DIR already exists!
+    error "Directory $DIR already exists!
 You must leave this name available for the buildpack"
-    exit 1
   fi
 done
 
@@ -111,7 +106,7 @@ install_boinc_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 ###################
 # Clean up & Cache
 ###################
-echo "-----> Finalizing... "
+echo "-----> Finalizing slug contents... "
 cd $BUILD_DIR
 rm -rf $BUILD_DIR/$REL_BOINC_PROJECT_DIR
 mv $BOINC_PROJECT_DIR $BUILD_DIR/$REL_BOINC_PROJECT_DIR
@@ -133,3 +128,5 @@ rm $BUILD_DIR/$REL_BOINC_PROJECT_DIR/keys/code_sign_private
 
 apache_enable_cgid
 apache_add_index_php
+
+# TODO move update_versions to here (very last thing)
