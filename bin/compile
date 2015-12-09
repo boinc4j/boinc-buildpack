@@ -102,6 +102,12 @@ if [ -f $BUILD_DIR/project/config.xml ]; then
 fi
 
 BOINC_PROJECT_DIR=/app/project
+
+if [ -f $BOINC_PROJECT_DIR/keys/code_sign_private ]; then
+  cp $BOINC_PROJECT_DIR/keys/code_sign_private /tmp/code_sign_private
+  cp $BOINC_PROJECT_DIR/keys/code_sign_public /tmp/code_sign_public
+fi
+
 ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME \
                      --db_user $DATABASE_USERNAME \
                      --db_passwd $DATABASE_PASSWORD ${NO_DB:-} \
@@ -110,6 +116,11 @@ BOINC_PROJECT_DIR=/app/project
                      --url_base "https://$APP_NAME.herokuapp.com" \
                      --project_host "$APP_NAME.herokuapp.com" \
                      boinc $APP_NAME | indent
+
+if [ -f /tmp/code_sign_private ]; then
+  mv /tmp/code_sign_private $BOINC_PROJECT_DIR/keys/code_sign_private
+  mv /tmp/code_sign_public $BOINC_PROJECT_DIR/keys/code_sign_public
+fi
 
 if [ -n "${OPS_USERNAME:-}" ] && [ -n "${OPS_PASSWORD:-}" ]; then
   htpasswd -cb $BOINC_PROJECT_DIR/html/ops/.htpasswd $OPS_USERNAME $OPS_PASSWORD | indent
@@ -134,9 +145,6 @@ mv $USR_BOINC_DIR/app $APP_DIR
 cp $USR_BOINC_DIR/templates/* templates/
 
 sign_files $BOINC_DIR $APP_DIR/*
-
-# TODO We need to cache this
-rm keys/code_sign_private
 
 yes | bin/update_versions | indent
 
@@ -164,6 +172,7 @@ done
 rm -rf $BUILD_DIR/boinc-src
 rm -rf $BUILD_DIR/.apt
 rm -rf $USR_BOINC_DIR
+rm $BUILD_DIR/project/keys/code_sign_private
 
 apache_enable_cgid
 apache_add_index_php
