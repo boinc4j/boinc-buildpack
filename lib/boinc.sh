@@ -32,7 +32,7 @@ make_boinc_project() {
 
   mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD -h $DATABASE_HOST -e "describe app;" $DATABASE_NAME > /dev/null 2>&1
   if [ $? == 0 ]; then
-    dbArgs="--no-db"
+    dbArgs="--no_db"
   fi
 
   ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME \
