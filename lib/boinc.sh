@@ -31,7 +31,7 @@ make_boinc_project() {
   sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
 
   echo "Testing database for existing schema..." | indent
-  mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD -h $DATABASE_HOST -e "describe app;" $DATABASE_NAME > /dev/null 2>&1
+  mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD -h $DATABASE_HOST -e "describe app;" $DATABASE_NAME #> /dev/null 2>&1
   if [ $? == 0 ]; then
     dbArgs="--no_db"
   fi
