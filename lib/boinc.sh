@@ -32,7 +32,7 @@ make_boinc_project() {
 
   echo "Testing database for existing schema..." | indent
   tables=$(mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD -h $DATABASE_HOST -e "show tables;" $DATABASE_NAME)
-  if [[ "$tables" =~ *"app_version"* ]]; then
+  if [[ "$tables" == *"app_version"* ]]; then
     dbArgs="--no_db"
   fi
 
