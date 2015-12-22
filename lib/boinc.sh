@@ -48,6 +48,9 @@ make_boinc_project() {
     htpasswd -cb $boincProjectDir/html/ops/.htpasswd $BOINC_OPS_USERNAME $BOINC_OPS_PASSWORD | indent
   fi
 
+  #sed -i.bak s/REPLACE\ WITH\ PROJECT\ NAME/${BOINC_APP_NAME}/g \
+  #    $boincProjectDir/html/project/project.inc
+
   cd - > /dev/null 2>&1
 }
 
@@ -99,6 +102,14 @@ install_boinc_app() {
 
   # Sign all files in the new version
   sign_files $boincDir $appDir/*
+
+  cd - > /dev/null 2>&1
+}
+
+boinc_update_versions() {
+  local boincProjectDir=${1}
+
+  cd $boincProjectDir
 
   buildLogFile=$(create_build_log_file "update_versions")
 
