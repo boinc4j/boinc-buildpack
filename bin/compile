@@ -131,5 +131,9 @@ rm $REL_BOINC_PROJECT_DIR/keys/code_sign_private
 apache_enable_cgid
 apache_add_index_php
 
+if [ -f $BUILD_DIR/index.html ]; then
+  cp $OPT_DIR/index.html $BUILD_DIR
+fi
+
 status "Updating app version..."
 boinc_update_versions $REL_BOINC_PROJECT_DIR
