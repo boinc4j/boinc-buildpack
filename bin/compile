@@ -92,6 +92,7 @@ fi
 echo "-----> Making BOINC Project... "
 export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
 export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
+export PATH=/app/.heroku/php/bin:$BUILD_DIR/.heroku/php/bin:$PATH
 if [ -d $BUILD_DIR/$REL_BOINC_PROJECT_DIR ]; then
   mv $BUILD_DIR/$REL_BOINC_PROJECT_DIR $BOINC_PROJECT_DIR
 fi
