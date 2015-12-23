@@ -7,7 +7,8 @@ install_boinc() {
   echo "-----> Downloading BOINC source... "
   BOINC_DIR=${1}
   mkdir -p $BOINC_DIR
-  curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/master | tar xzm -C $BOINC_DIR --strip-components=1
+  local boincVersion=${BOINC_VERSION:-"985ec15dfe971c6cf5348c1e3df0449329dfb530"}
+  curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/${BOINC_VERSION}| tar xzm -C $BOINC_DIR --strip-components=1
 
   #### Build BOINC from source
   echo "-----> Making BOINC Server... "
