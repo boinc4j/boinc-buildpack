@@ -163,6 +163,9 @@ boinc_add_config() {
       <cmd>transitioner -d 3 </cmd>
     </daemon>
     <daemon>
+     <cmd>file_deleter -d 2 --preserve_wu_files --preserve_result_files</cmd>
+    </daemon>
+    <daemon>
       <cmd>sample_trivial_validator -d 2 --app ${HEROKU_APP_NAME}</cmd>
     </daemon>
     <daemon>

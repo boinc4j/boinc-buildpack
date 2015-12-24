@@ -99,13 +99,13 @@ fi
 make_boinc_project $BOINC_DIR $BOINC_PROJECT_DIR
 
 create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
-boinc_add_config $BOINC_PROJECT_DIR
 
 ##################
 # Install the app
 ##################
 echo "-----> Installing BOINC App... "
 install_boinc_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
+boinc_add_config $BOINC_PROJECT_DIR
 
 ###################
 # Clean up & Cache
