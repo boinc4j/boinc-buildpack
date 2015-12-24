@@ -89,7 +89,7 @@ fi
 ######################
 # Prepare the project
 ######################
-echo "-----> Making BOINC Project... "
+status " Making BOINC Project... "
 export PATH=$BUILD_DIR/.apt/usr/sbin:$BUILD_DIR/.apt/usr/bin:$PATH
 export PYTHONPATH=$BUILD_DIR/.apt/usr/lib/python2.7/dist-packages
 export PATH=/app/.heroku/php/bin:$BUILD_DIR/.heroku/php/bin:$PATH
@@ -103,8 +103,10 @@ create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
 ##################
 # Install the app
 ##################
-echo "-----> Installing BOINC App... "
+status "Installing BOINC App... "
 install_boinc_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
+
+status "Customizing configuration...
 boinc_add_config $BOINC_PROJECT_DIR
 
 ###################
