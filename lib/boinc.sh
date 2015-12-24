@@ -101,8 +101,23 @@ install_boinc_app() {
   # Copy templates over
   cp $userBoincDir/templates/* templates/
 
+  # Copy downloads over
+  #if [ -d $userBoincDir/download ]; then
+  #  cp $userBoincDir/download/* download/
+  #fi
+
   # Sign all files in the new version
   sign_files $boincDir $appDir/*
+
+  # TODO Remove the following...
+
+  sed -i.bak s/int\(/\(\(int\)/g bin/update_versions
+
+  buildLogFile=$(create_build_log_file "update_versions")
+
+  yes | bin/update_versions 2>&1 | output $buildLogFile
+
+  handle_update_versions_errors $buildLogFile
 
   cd - > /dev/null 2>&1
 }
@@ -111,6 +126,8 @@ boinc_update_versions() {
   local boincProjectDir=${1}
 
   cd $boincProjectDir
+
+  sed -i.bak s/int\(/intval\(/g bin/update_versions
 
   buildLogFile=$(create_build_log_file "update_versions")
 

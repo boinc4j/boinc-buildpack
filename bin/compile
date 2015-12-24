@@ -132,9 +132,14 @@ rm $REL_BOINC_PROJECT_DIR/keys/code_sign_private
 apache_enable_cgid
 apache_add_index_php
 
-if [ -f $BUILD_DIR/index.html ]; then
+if [ ! -f $BUILD_DIR/index.html ]; then
   cp $OPT_DIR/index.html $BUILD_DIR
 fi
 
-status "Updating app version..."
-boinc_update_versions $REL_BOINC_PROJECT_DIR
+# TODO Need builds in /app already
+#status "Updating app version..."
+#boinc_update_versions $REL_BOINC_PROJECT_DIR
+
+# These files aren't needed at runtime. The files will have been
+# copied into download dir if needed.
+rm -rf $REL_BOINC_PROJECT_DIR/apps
