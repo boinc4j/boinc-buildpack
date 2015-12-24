@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+export PATH=/app/.apt/usr/sbin:/app/.apt/usr/bin:$PATH
+
+SYNC_ACCESS_KEY=${BUCKETEER_AWS_ACCESS_KEY_ID:-$AWS_ACCESS_KEY}
+SYNC_SECRET_KEY=${BUCKETEER_AWS_SECRET_ACCESS_KEY:-$AWS_SECRET_KEY}
+SYNC_BUCKET=${BUCKETEER_BUCKET_NAME:-$AWS_BUCKET_NAME}
+
+if [ -n "$SYNC_BUCKET" ]; then
+  cat << EOF > .s3cfg
+[default]
+access_key = ${SYNC_ACCESS_KEY}
+secret_key = ${SYNC_SECRET_KEY}
+EOF
+  while true; do
+    sleep ${AWS_SYNC_INTERVAL:-60}
+    if [ -d boinc-project/sample_results ]; then
+      echo "Syncing sample_results to S3..."
+      s3cmd sync boinc-project/sample_results/ s3://${SYNC_BUCKET}/sample_results/
+    else
+      echo "No sample_results dir found!"
+    fi
+  done
+  rm .s3cfg
+fi

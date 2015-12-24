@@ -70,7 +70,7 @@ done
 ########################
 if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
   rm -rf $BUILD_DIR/.apt
-  install_deps $BUILD_DIR "mysql-client python-mysqldb"
+  install_deps $BUILD_DIR "mysql-client python-mysqldb s3cmd"
 else
   echo "-----> Using cached dependencies... "
 fi
@@ -99,6 +99,7 @@ fi
 make_boinc_project $BOINC_DIR $BOINC_PROJECT_DIR
 
 create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
+boinc_add_config $BOINC_PROJECT_DIR
 
 ##################
 # Install the app
@@ -125,7 +126,7 @@ done
 
 # Remove build-only files from slug
 rm -rf $REL_BOINC_DIR
-rm -rf .apt
+#rm -rf .apt
 rm -rf $USER_BOINC_DIR
 rm $REL_BOINC_PROJECT_DIR/keys/code_sign_private
 
@@ -135,6 +136,8 @@ apache_add_index_php
 if [ ! -f $BUILD_DIR/index.html ]; then
   cp $OPT_DIR/index.html $BUILD_DIR
 fi
+mkdir -p bin
+cp $OPT_DIR/sync bin/sync
 
 # TODO Need builds in /app already
 #status "Updating app version..."

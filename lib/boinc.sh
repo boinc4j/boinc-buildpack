@@ -149,12 +149,38 @@ sign_files() {
   done
 }
 
+boinc_add_config() {
+  local boincProjectDir=${1}
+
+  sed -i.bak '/\<daemons\>/,$d' ${boincProjectDir}/config.xml
+
+  cat <<EOF >> ${boincProjectDir}/config.xml
+  <daemons>
+    <daemon>
+      <cmd>feeder -d 3 </cmd>
+    </daemon>
+    <daemon>
+      <cmd>transitioner -d 3 </cmd>
+    </daemon>
+    <daemon>
+      <cmd>sample_trivial_validator -d 2 --app ${HEROKU_APP_NAME}</cmd>
+    </daemon>
+    <daemon>
+      <cmd>sample_assimilator -d 2 --app ${HEROKU_APP_NAME}</cmd>
+    </daemon>
+  </daemons>
+</boinc>
+EOF
+}
+
 create_start_script() {
   local buildDir=${1}
   local relBoincProjectDir=${2}
 
   cat <<EOF > $buildDir/start-boinc.sh
 #!/usr/bin/env bash
+
+bin/sync &
 
 if [ "\$DYNO" = "web.1" ]; then
   echo "Starting daemons..."
