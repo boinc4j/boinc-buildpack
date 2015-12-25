@@ -109,6 +109,9 @@ status "Customizing configuration..."
 boinc_add_config $BOINC_PROJECT_DIR
 boinc_create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
 
+status "Updating app version..."
+boinc_update_versions $BOINC_PROJECT_DIR
+
 ###################
 # Clean up & Cache
 ###################
@@ -141,11 +144,13 @@ fi
 mkdir -p bin
 cp $OPT_DIR/sync bin/sync
 
+# TODO
 # This needs to be done as late as possible because it updates
 # the database with a version. But if something fails, the
 # version will be stuck in an inconsistent state.
-status "Updating app version..."
-boinc_update_versions $REL_BOINC_PROJECT_DIR
+# But probably need builds in /app first
+#status "Updating app version..."
+#boinc_update_versions $REL_BOINC_PROJECT_DIR
 
 # These files aren't needed at runtime. The files will have been
 # copied into download dir if needed.
