@@ -96,17 +96,18 @@ export PATH=/app/.heroku/php/bin:$BUILD_DIR/.heroku/php/bin:$PATH
 if [ -d $BUILD_DIR/$REL_BOINC_PROJECT_DIR ]; then
   mv $BUILD_DIR/$REL_BOINC_PROJECT_DIR $BOINC_PROJECT_DIR
 fi
-make_boinc_project $BOINC_DIR $BOINC_PROJECT_DIR
 
-create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
+boinc_make_project $BOINC_DIR $BOINC_PROJECT_DIR
+
+boinc_create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
 
 ##################
 # Install the app
 ##################
 status "Installing BOINC App... "
-install_boinc_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
+boinc_install_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 
-status "Customizing configuration...
+status "Customizing configuration..."
 boinc_add_config $BOINC_PROJECT_DIR
 
 ###################
@@ -141,9 +142,11 @@ fi
 mkdir -p bin
 cp $OPT_DIR/sync bin/sync
 
-# TODO Need builds in /app already
-#status "Updating app version..."
-#boinc_update_versions $REL_BOINC_PROJECT_DIR
+# This needs to be done as late as possible because it updates
+# the database with a version. But if something fails, the
+# version will be stuck in an inconsistent state.
+status "Updating app version..."
+boinc_update_versions $REL_BOINC_PROJECT_DIR
 
 # These files aren't needed at runtime. The files will have been
 # copied into download dir if needed.

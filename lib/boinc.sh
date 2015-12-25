@@ -7,7 +7,7 @@ install_boinc() {
   echo "-----> Downloading BOINC source... "
   BOINC_DIR=${1}
   mkdir -p $BOINC_DIR
-  local boincVersion=${BOINC_VERSION:-"985ec15dfe971c6cf5348c1e3df0449329dfb530"}
+  local boincVersion=${BOINC_VERSION:-"076755cb112ca0e62420f6ba7efa050dd53d24bc"}
   curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/${boincVersion}| tar xzm -C $BOINC_DIR --strip-components=1
 
   #### Build BOINC from source
@@ -19,7 +19,7 @@ install_boinc() {
   cd - > /dev/null 2>&1
 }
 
-make_boinc_project() {
+boinc_make_project() {
   local boincDir=${1}
   local boincProjectDir=${2}
 
@@ -55,7 +55,7 @@ make_boinc_project() {
   cd - > /dev/null 2>&1
 }
 
-add_project_xml() {
+boinc_add_project_xml() {
   local projectXml=${1}
   local projectName=${2}
 
@@ -63,7 +63,7 @@ add_project_xml() {
   sed -i.bak s/Example\ Application/${projectName}/g ${projectXml}
 }
 
-next_boinc_app_version() {
+boinc_next_app_version() {
   local versionFile=${1}
 
   if [ ! -f $versionFile ]; then
@@ -77,7 +77,7 @@ next_boinc_app_version() {
   echo "${nextVersion}.0"
 }
 
-install_boinc_app() {
+boinc_install_app() {
   local buildDir=${1}
   local boincDir=${2}
   local boincProjectDir=${3}
@@ -85,10 +85,10 @@ install_boinc_app() {
 
   cd $boincProjectDir
 
-  local nextVersion=$(next_boinc_app_version ${boincProjectDir}/app_version.txt)
+  local nextVersion=$(boinc_next_app_version ${boincProjectDir}/app_version.txt)
   local appDir=apps/$HEROKU_APP_NAME
 
-  add_project_xml $boincProjectDir/project.xml $HEROKU_APP_NAME
+  boinc_add_project_xml $boincProjectDir/project.xml $HEROKU_APP_NAME
   bin/xadd | indent
 
   # Remove all previous versions
@@ -107,17 +107,7 @@ install_boinc_app() {
   #fi
 
   # Sign all files in the new version
-  sign_files $boincDir $appDir/*
-
-  # TODO Remove the following...
-
-  sed -i.bak s/int\(/\(\(int\)/g bin/update_versions
-
-  buildLogFile=$(create_build_log_file "update_versions")
-
-  yes | bin/update_versions 2>&1 | output $buildLogFile
-
-  handle_update_versions_errors $buildLogFile
+  boinc_sign_files $boincDir $appDir/*
 
   cd - > /dev/null 2>&1
 }
@@ -127,8 +117,6 @@ boinc_update_versions() {
 
   cd $boincProjectDir
 
-  sed -i.bak s/int\(/intval\(/g bin/update_versions
-
   buildLogFile=$(create_build_log_file "update_versions")
 
   yes | bin/update_versions 2>&1 | output $buildLogFile
@@ -138,7 +126,7 @@ boinc_update_versions() {
   cd - > /dev/null 2>&1
 }
 
-sign_files() {
+boinc_sign_files() {
   local boincDir=${1}
   local appDir=${2}
 
@@ -176,7 +164,7 @@ boinc_add_config() {
 EOF
 }
 
-create_start_script() {
+boinc_create_start_script() {
   local buildDir=${1}
   local relBoincProjectDir=${2}
 
