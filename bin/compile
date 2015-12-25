@@ -72,7 +72,7 @@ if [ -n "${REINSTALL_DEPS:-""}" ] || [ ! -d $BUILD_DIR/.apt ]; then
   rm -rf $BUILD_DIR/.apt
   install_deps $BUILD_DIR "mysql-client python-mysqldb s3cmd"
 else
-  echo "-----> Using cached dependencies... "
+  status "Using cached dependencies... "
 fi
 
 ##########################
@@ -82,7 +82,7 @@ if [ -n "${REBUILD_BOINC:-""}" ] || [ ! -d $BUILD_DIR/$REL_BOINC_DIR ]; then
   mkdir -p $BOINC_DIR
   install_boinc $BOINC_DIR
 else
-  echo "-----> Using cached BOINC Server... "
+  status "Using cached BOINC Server... "
   mv $BUILD_DIR/$REL_BOINC_DIR $BOINC_DIR
 fi
 
@@ -99,8 +99,6 @@ fi
 
 boinc_make_project $BOINC_DIR $BOINC_PROJECT_DIR
 
-boinc_create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
-
 ##################
 # Install the app
 ##################
@@ -109,11 +107,12 @@ boinc_install_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 
 status "Customizing configuration..."
 boinc_add_config $BOINC_PROJECT_DIR
+boinc_create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
 
 ###################
 # Clean up & Cache
 ###################
-echo "-----> Finalizing slug contents... "
+status "Finalizing slug contents... "
 cd $BUILD_DIR
 rm -rf $REL_BOINC_PROJECT_DIR
 mv $BOINC_PROJECT_DIR $REL_BOINC_PROJECT_DIR

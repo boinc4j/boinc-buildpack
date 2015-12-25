@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 install_deps() {
   local buildDir=${1}
   local depNames=${2}
