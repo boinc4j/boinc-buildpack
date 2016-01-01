@@ -106,6 +106,11 @@ boinc_install_app() {
   #  cp $userBoincDir/download/* download/
   #fi
 
+  if [ -d $userBoincDir/bin ]; then
+    cp $userBoincDir/bin/* bin/
+    chmod +x bin/*
+  fi
+
   # Sign all files in the new version
   boinc_sign_files $boincDir $appDir/*
 
@@ -157,16 +162,10 @@ boinc_add_config() {
       <cmd>sample_trivial_validator -d 2 --app ${HEROKU_APP_NAME}</cmd>
     </daemon>
     <daemon>
-      <cmd>script_assimilator --script assim.sh -d 2 --app ${HEROKU_APP_NAME}</cmd>
+      <cmd>script_assimilator --script java_assimilator -d 2 --app ${HEROKU_APP_NAME}</cmd>
     </daemon>
   </daemons>
 </boinc>
-EOF
-
-  cat <<EOF > ${boincProjectDir}/bin/assim.sh
-#!/usr/bin/env bash
-
-java -cp ${boincProjectDir}/download/java-at-home-1.2*.jar Assimilator \$@
 EOF
 }
 
