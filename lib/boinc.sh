@@ -143,14 +143,15 @@ boinc_sign_files() {
 }
 
 boinc_add_config() {
-  local boincProjectDir=${1}
+    local boincProjectDir=${1}
+    local userBoincDir=${2}
 
   cd ${boincProjectDir}
 
   sed -i.bak '/\<daemons\>/,$d' config.xml
 
-  if [ -f daemons.xml ]; then
-      envsubst < daemons.xml >> config.xml
+  if [ -f ${userBoincDir}/daemons.xml ]; then
+      envsubst < ${userBoincDir}/daemons.xml >> config.xml
   else
     cat <<EOF >> config.xml
   <daemons>
