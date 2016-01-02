@@ -173,7 +173,7 @@ boinc_add_config() {
 EOF
   fi
 
-  echo "<boinc>" >> config.xml
+  echo "</boinc>" >> config.xml
 
   cd - > /dev/null 2>&1
 }
