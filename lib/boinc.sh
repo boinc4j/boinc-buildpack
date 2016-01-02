@@ -145,9 +145,14 @@ boinc_sign_files() {
 boinc_add_config() {
   local boincProjectDir=${1}
 
-  sed -i.bak '/\<daemons\>/,$d' ${boincProjectDir}/config.xml
+  cd ${boincProjectDir}
 
-  cat <<EOF >> ${boincProjectDir}/config.xml
+  sed -i.bak '/\<daemons\>/,$d' config.xml
+
+  if [ -f daemons.xml ]; then
+      envsubst < daemons.xml >> config.xml
+  else
+    cat <<EOF >> config.xml
   <daemons>
     <daemon>
       <cmd>feeder -d 3 </cmd>
@@ -162,11 +167,15 @@ boinc_add_config() {
       <cmd>sample_trivial_validator -d 2 --app ${HEROKU_APP_NAME}</cmd>
     </daemon>
     <daemon>
-      <cmd>script_assimilator --script java_assimilator -d 2 --app ${HEROKU_APP_NAME}</cmd>
+      <cmd>sample_assimilator -d 2 --app ${HEROKU_APP_NAME}</cmd>
     </daemon>
   </daemons>
-</boinc>
 EOF
+  fi
+
+  echo "<boinc>" >> config.xml
+
+  cd - > /dev/null 2>&1
 }
 
 boinc_create_start_script() {
