@@ -194,7 +194,7 @@ if [ "\$DYNO" = "web.1" ]; then
   sed -i.bak s/\<host\>.*\</\<host\>\$(hostname)\</g config.xml
   bin/start &
   sleep 3
-  tail /app/$relBoincProjectDir/log_\$(hostname)/* &
+  tail -f /app/$relBoincProjectDir/log_\$(hostname)/* &
 fi
 
 cd /app
