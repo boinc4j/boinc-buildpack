@@ -102,6 +102,8 @@ boinc_make_project $BOINC_DIR $BOINC_PROJECT_DIR
 ##################
 # Install the app
 ##################
+boinc_delete_old_downloads $BOINC_PROJECT_DIR
+
 status "Installing BOINC App... "
 boinc_install_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 

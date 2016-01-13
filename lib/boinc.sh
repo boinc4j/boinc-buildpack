@@ -77,6 +77,18 @@ boinc_next_app_version() {
   echo "${nextVersion}.0"
 }
 
+boinc_delete_old_downloads() {
+  local boincProjectDir=${1}
+
+  # TODO check for deprecated versions in DB and
+  # delete only files associated with those
+
+  if [ -z "${BOINC_KEEP_DOWNLOADS:-}" ]; then
+    status "Deleting old download files..."
+    rm -rf ${boincProjectDir}/download/*
+  fi
+}
+
 boinc_install_app() {
   local buildDir=${1}
   local boincDir=${2}
