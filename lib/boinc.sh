@@ -77,7 +77,7 @@ boinc_next_app_version() {
   echo "${nextVersion}.0"
 }
 
-boinc_delete_old_downloads() {
+boinc_prepare_downloads() {
   local boincProjectDir=${1}
 
   # TODO check for deprecated versions in DB and
@@ -87,6 +87,14 @@ boinc_delete_old_downloads() {
     status "Deleting old download files..."
     rm -rf ${boincProjectDir}/download/*
   fi
+
+  echo "{}" > ${boincProjectDir}/download/in.json
+
+  # TODO copy download files over from userBoincDir
+  # Copy downloads over
+  #if [ -d $userBoincDir/download ]; then
+  #  cp $userBoincDir/download/* download/
+  #fi
 }
 
 boinc_install_app() {
@@ -112,11 +120,6 @@ boinc_install_app() {
 
   # Copy templates over
   cp $userBoincDir/templates/* templates/
-
-  # Copy downloads over
-  #if [ -d $userBoincDir/download ]; then
-  #  cp $userBoincDir/download/* download/
-  #fi
 
   if [ -d $userBoincDir/bin ]; then
     cp $userBoincDir/bin/* bin/
