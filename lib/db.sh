@@ -12,9 +12,14 @@ export_db_props() {
   local db_host_port=$(expr "$db_url" : "${db_prefix}\(.\+\)/")
   db_prefix="${db_prefix}${db_host_port}/"
 
-  local db_name=$(expr "$db_url" : "${db_prefix}\(.\+\)?")
+  local db_host=$(expr "$db_host_port" : "\(.\+\):")
+  local db_port=$(expr "$db_host_port" : "${db_host}:\(.\+\)")
 
-  export DATABASE_HOST="${db_host_port}"
+  local db_name=$(expr "$db_url" : "${db_prefix}\(.\+\)?\?")
+
+  export DATABASE_HOST="${db_host:-$db_host_port}"
+  export DATABASE_PORT="${db_port}"
+  export DATABASE_HOST_PORT="${db_host_port}"
   export DATABASE_USERNAME="${db_user}"
   export DATABASE_PASSWORD="${db_pass}"
   export DATABASE_NAME="${db_name}"

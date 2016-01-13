@@ -11,7 +11,7 @@ install_boinc() {
   curl --silent --retry 3 -L https://api.github.com/repos/BOINC/boinc/tarball/${boincVersion}| tar xzm -C $BOINC_DIR --strip-components=1
 
   #### Build BOINC from source
-  echo "-----> Making BOINC Server... "
+  status "Making BOINC Server... "
   cd $BOINC_DIR
   ./_autosetup
   ./configure --disable-client --disable-manager
@@ -32,12 +32,17 @@ boinc_make_project() {
   sed -i.bak s/cursor.execute\(\"create\ database/\#cursor.execute\(\"create\ database/g py/Boinc/database.py
 
   echo "Testing database for existing schema..." | indent
-  tables=$(mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD -h $DATABASE_HOST -e "show tables;" $DATABASE_NAME)
+  if [ -n "${DATABASE_PORT:-}" ]; then
+    mysqlOpts="-h $DATABASE_HOST -P $DATABASE_PORT"
+  else
+    mysqlOpts="-h $DATABASE_HOST_PORT"
+  fi
+  tables=$(mysql -u $DATABASE_USERNAME -p$DATABASE_PASSWORD $mysqlOpts -e "show tables;" $DATABASE_NAME)
   if [[ "$tables" == *"app_version"* ]]; then
     dbArgs="--no_db"
   fi
 
-  ./tools/make_project --db_host $DATABASE_HOST --db_name $DATABASE_NAME \
+  ./tools/make_project --db_host ${DATABASE_HOST_PORT} --db_name $DATABASE_NAME \
                        --db_user $DATABASE_USERNAME --db_passwd $DATABASE_PASSWORD ${dbArgs:-} \
                        --user_name $(whoami) --no_query --srcdir $boincDir \
                        --project_root $boincProjectDir \
@@ -80,21 +85,26 @@ boinc_next_app_version() {
 boinc_prepare_downloads() {
   local boincProjectDir=${1}
 
+  cd ${boincProjectDir}
+
   # TODO check for deprecated versions in DB and
   # delete only files associated with those
 
   if [ -z "${BOINC_KEEP_DOWNLOADS:-}" ]; then
     status "Deleting old download files..."
-    rm -rf ${boincProjectDir}/download/*
+    rm -rf download/*
   fi
 
-  echo "{}" > ${boincProjectDir}/download/in.json
+  echo "{}" > download/in.json
+  ./bin/stage_file download/in.json
 
   # TODO copy download files over from userBoincDir
   # Copy downloads over
   #if [ -d $userBoincDir/download ]; then
   #  cp $userBoincDir/download/* download/
   #fi
+
+  cd - > /dev/null 2>&1
 }
 
 boinc_install_app() {
