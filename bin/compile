@@ -110,6 +110,7 @@ boinc_install_app $BUILD_DIR $BOINC_DIR $BOINC_PROJECT_DIR $USER_BOINC_DIR
 status "Customizing configuration..."
 boinc_add_config $BOINC_PROJECT_DIR $USER_BOINC_DIR
 boinc_create_start_script $BUILD_DIR $REL_BOINC_PROJECT_DIR
+boinc_sub_project_name $BOINC_PROJECT_DIR
 
 status "Updating app version..."
 boinc_update_versions $BOINC_PROJECT_DIR

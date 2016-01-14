@@ -167,9 +167,17 @@ boinc_sign_files() {
   done
 }
 
+boinc_sub_project_name() {
+  local boincProjectDir=${1}
+
+  sed -i.bak \
+    "s/REPLACE\ WITH\ PROJECT\ NAME/${BOINC_APP_NAME:-$HEROKU_APP_NAME}/g" \
+    ${boincProjectDir}/html/project/project.inc
+}
+
 boinc_add_config() {
-    local boincProjectDir=${1}
-    local userBoincDir=${2}
+  local boincProjectDir=${1}
+  local userBoincDir=${2}
 
   cd ${boincProjectDir}
 
