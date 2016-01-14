@@ -32,7 +32,7 @@ your template files, just as it would on the BOINC server.
 
 Once you've create this project, install the [Heroku toolbelt](http://toolbelt.heroku.com), create a Heroku account, and login with the `heroku login` command.
 
-Then initialize a Git repo for you project:
+Then initialize a Git repo for your project:
 
 ```
 $ git init
