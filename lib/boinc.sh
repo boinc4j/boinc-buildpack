@@ -153,6 +153,9 @@ boinc_update_versions() {
 
   handle_update_versions_errors $buildLogFile
 
+  # Delete project files that are backed up by a URL
+  rm -f download/*.zip
+
   cd - > /dev/null 2>&1
 }
 
